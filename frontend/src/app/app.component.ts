@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from './core/services/auth.service';
+import { RealtimeService } from './core/services/realtime.service';
 
 @Component({
   selector: 'app-root',
@@ -8,7 +9,19 @@ import { AuthService } from './core/services/auth.service';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    realtimeService: RealtimeService
+  ) {
+    this.authService.currentUser$.subscribe((user) => {
+      if (user) {
+        realtimeService.connect();
+      } else {
+        realtimeService.disconnect();
+      }
+    });
+  }
 
   logout(): void {
     this.authService.logout().subscribe({

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using FixMyCampus.Application.DTOs.Auth;
 using FixMyCampus.Application.Interfaces;
 using FixMyCampus.Domain.Enums;
+using FixMyCampus.Api.Realtime;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,7 +12,8 @@ namespace FixMyCampus.Api.Controllers;
 [Route("api/[controller]")]
 [Authorize(Roles = "Admin")]
 public class UsersController(
-    IUserApprovalService userApprovalService) : ControllerBase
+    IUserApprovalService userApprovalService,
+    IRealtimeNotifier realtimeNotifier) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<UserAdminResponse>>> GetUsers(
@@ -34,6 +36,9 @@ public class UsersController(
             adminId,
             request.Role);
 
+        await realtimeNotifier.UsersChangedAsync(
+            HttpContext.RequestAborted);
+
         return Ok(user);
     }
 
@@ -48,6 +53,9 @@ public class UsersController(
             userId,
             adminId,
             request.Reason);
+
+        await realtimeNotifier.UsersChangedAsync(
+            HttpContext.RequestAborted);
 
         return Ok(user);
     }

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using FixMyCampus.Application.DTOs.Auth;
 using FixMyCampus.Application.Interfaces;
+using FixMyCampus.Api.Realtime;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,7 +11,8 @@ namespace FixMyCampus.Api.Controllers;
 [Route("api/[controller]")]
 public class AuthController(
     IAuthService authService,
-    IConfiguration configuration) : ControllerBase
+    IConfiguration configuration,
+    IRealtimeNotifier realtimeNotifier) : ControllerBase
 {
     private const string AccessTokenCookie = "access_token";
     private const string RefreshTokenCookie = "refresh_token";
@@ -21,6 +23,9 @@ public class AuthController(
         [FromBody] RegisterRequest request)
     {
         var user = await authService.RegisterAsync(request);
+
+        await realtimeNotifier.UsersChangedAsync(
+            HttpContext.RequestAborted);
 
         return Ok(user);
     }

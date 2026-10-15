@@ -69,6 +69,7 @@ npm start
 ```
 
 Open `http://localhost:4200`. The API URL is configured in `frontend/src/environments/environment.ts`.
+The authenticated SignalR connection uses the same API host at `/hubs/updates`; keep the API running and allow the configured Angular origin through CORS. Ticket and account changes broadcast refresh notifications so relevant open tabs reload their data without a page refresh.
 
 ## Main workflows
 

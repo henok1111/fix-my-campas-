@@ -1,5 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { TicketService } from 'src/app/core/services/ticket.service';
+import { RealtimeService } from 'src/app/core/services/realtime.service';
 import { Building, DashboardSummary, Ticket, Technician, TicketStatus } from 'src/app/shared/models/ticket.model';
 import { getApiErrorMessage } from 'src/app/core/utils/api-error-message';
 
@@ -8,7 +10,7 @@ import { getApiErrorMessage } from 'src/app/core/utils/api-error-message';
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.css']
 })
-export class AdminDashboardComponent implements OnInit {
+export class AdminDashboardComponent implements OnDestroy, OnInit {
   tickets: Ticket[] = [];
   technicians: Technician[] = [];
   buildings: Building[] = [];
@@ -21,13 +23,31 @@ export class AdminDashboardComponent implements OnInit {
   loadingTechnicians = false;
   busyTicketId: number | null = null;
 
-  constructor(private ticketService: TicketService) {}
+  private readonly subscriptions = new Subscription();
+
+  constructor(
+    private ticketService: TicketService,
+    private realtimeService: RealtimeService
+  ) {}
 
   ngOnInit(): void {
     this.loadTickets();
     this.loadTechnicians();
     this.loadBuildings();
     this.loadSummary();
+    this.subscriptions.add(
+      this.realtimeService.ticketsChanged$.subscribe(() => {
+        this.loadTickets();
+        this.loadSummary();
+      })
+    );
+    this.subscriptions.add(
+      this.realtimeService.usersChanged$.subscribe(() => this.loadTechnicians())
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
   loadTickets(): void {

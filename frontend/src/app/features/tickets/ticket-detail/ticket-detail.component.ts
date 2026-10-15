@@ -1,7 +1,9 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { TicketService } from 'src/app/core/services/ticket.service';
+import { RealtimeService } from 'src/app/core/services/realtime.service';
 import { Ticket, TicketAttachment, TicketHistoryItem, Technician, TicketStatus } from 'src/app/shared/models/ticket.model';
 import { getApiErrorMessage } from 'src/app/core/utils/api-error-message';
 
@@ -22,16 +24,32 @@ export class TicketDetailComponent implements OnDestroy, OnInit {
   attachmentUrls: Record<number, string> = {};
   attachmentLoading: Record<number, boolean> = {};
   attachmentErrors: Record<number, string> = {};
+  private readonly subscriptions = new Subscription();
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private authService: AuthService,
-    private ticketService: TicketService
+    private ticketService: TicketService,
+    private realtimeService: RealtimeService
   ) {}
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
+    this.subscriptions.add(
+      this.realtimeService.ticketsChanged$.subscribe(() => {
+        if (this.ticket) {
+          this.loadTicket(this.ticket.id);
+        }
+      })
+    );
+    this.subscriptions.add(
+      this.realtimeService.usersChanged$.subscribe(() => {
+        if (this.isAdmin) {
+          this.loadTechnicians();
+        }
+      })
+    );
     if (Number.isInteger(id) && id > 0) {
       this.loadTicket(id);
       if (this.isAdmin) {
@@ -44,6 +62,7 @@ export class TicketDetailComponent implements OnDestroy, OnInit {
   }
 
   ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
     Object.values(this.attachmentUrls).forEach((url) => URL.revokeObjectURL(url));
   }
 

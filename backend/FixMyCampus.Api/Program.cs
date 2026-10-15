@@ -3,6 +3,7 @@ using System.Text;
 using FixMyCampus.Application.Common;
 using FixMyCampus.Infrastructure;
 using FixMyCampus.Infrastructure.Persistence.Seed;
+using FixMyCampus.Api.Realtime;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
@@ -23,6 +24,8 @@ builder.Services.AddControllers()
 
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<IRealtimeNotifier, SignalRRealtimeNotifier>();
 
 builder.Services.AddInfrastructure(builder.Configuration);
 
@@ -225,5 +228,6 @@ app.UseAuthorization();
 
 // Map API controllers.
 app.MapControllers();
+app.MapHub<UpdatesHub>("/hubs/updates").RequireAuthorization();
 
 app.Run();

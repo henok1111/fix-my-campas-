@@ -1,6 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { ApprovalStatus, UserAdminResponse } from '../../../shared/models/ticket.model';
 import { UsersService } from '../../../core/services/users.service';
+import { RealtimeService } from '../../../core/services/realtime.service';
 import { getApiErrorMessage } from '../../../core/utils/api-error-message';
 
 @Component({
@@ -8,7 +10,7 @@ import { getApiErrorMessage } from '../../../core/utils/api-error-message';
   templateUrl: './user-approvals.component.html',
   styleUrls: ['./user-approvals.component.css']
 })
-export class UserApprovalsComponent implements OnInit {
+export class UserApprovalsComponent implements OnDestroy, OnInit {
   users: UserAdminResponse[] = [];
   status: ApprovalStatus = 'Pending';
   loading = true;
@@ -18,10 +20,22 @@ export class UserApprovalsComponent implements OnInit {
   readonly selectedRoles: Record<string, 'Reporter' | 'Technician'> = {};
   readonly rejectionReasons: Record<string, string> = {};
 
-  constructor(private usersService: UsersService) {}
+  private readonly subscriptions = new Subscription();
+
+  constructor(
+    private usersService: UsersService,
+    private realtimeService: RealtimeService
+  ) {}
 
   ngOnInit(): void {
     this.loadUsers();
+    this.subscriptions.add(
+      this.realtimeService.usersChanged$.subscribe(() => this.loadUsers())
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
   loadUsers(): void {

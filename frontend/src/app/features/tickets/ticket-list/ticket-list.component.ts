@@ -1,5 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { TicketService } from 'src/app/core/services/ticket.service';
+import { RealtimeService } from 'src/app/core/services/realtime.service';
 import { Building, Ticket, TicketStatus } from 'src/app/shared/models/ticket.model';
 import { getApiErrorMessage } from 'src/app/core/utils/api-error-message';
 
@@ -8,7 +10,7 @@ import { getApiErrorMessage } from 'src/app/core/utils/api-error-message';
   templateUrl: './ticket-list.component.html',
   styleUrls: ['./ticket-list.component.css']
 })
-export class TicketListComponent implements OnInit {
+export class TicketListComponent implements OnDestroy, OnInit {
   tickets: Ticket[] = [];
   buildings: Building[] = [];
   buildingFilter: number | null = null;
@@ -17,7 +19,12 @@ export class TicketListComponent implements OnInit {
   loading = false;
   errorMessage = '';
 
-  constructor(private ticketService: TicketService) {}
+  private readonly subscriptions = new Subscription();
+
+  constructor(
+    private ticketService: TicketService,
+    private realtimeService: RealtimeService
+  ) {}
 
   ngOnInit(): void {
     this.ticketService.getBuildings().subscribe({
@@ -25,6 +32,13 @@ export class TicketListComponent implements OnInit {
       error: (err) => this.errorMessage = getApiErrorMessage(err, 'Unable to load campus buildings.')
     });
     this.loadTickets();
+    this.subscriptions.add(
+      this.realtimeService.ticketsChanged$.subscribe(() => this.loadTickets())
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
   loadTickets(): void {

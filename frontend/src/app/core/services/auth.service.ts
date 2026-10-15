@@ -10,6 +10,7 @@ import { environment } from '../../../environments/environment';
 export class AuthService {
   private readonly baseUrl = `${environment.apiUrl}/auth`;
   private readonly currentUserSubject = new BehaviorSubject<UserResponse | null>(null);
+  readonly currentUser$ = this.currentUserSubject.asObservable();
   private sessionChecked = false;
   private restoreRequest: Observable<UserResponse | null> | null = null;
 

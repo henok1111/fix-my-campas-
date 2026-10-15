@@ -3,6 +3,7 @@ using FixMyCampus.Application.Common;
 using FixMyCampus.Application.DTOs.Tickets;
 using FixMyCampus.Application.Interfaces;
 using FixMyCampus.Domain.Enums;
+using FixMyCampus.Api.Realtime;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,7 +13,8 @@ namespace FixMyCampus.Api.Controllers;
 [Route("api/[controller]")]
 [Authorize]
 public class TicketsController(
-    ITicketService ticketService) : ControllerBase
+    ITicketService ticketService,
+    IRealtimeNotifier realtimeNotifier) : ControllerBase
 {
     [HttpPost]
     [Authorize(Roles = "Reporter")]
@@ -24,6 +26,9 @@ public class TicketsController(
         var ticket = await ticketService.CreateAsync(
             request,
             reporterId);
+
+        await realtimeNotifier.TicketsChangedAsync(
+            HttpContext.RequestAborted);
 
         return CreatedAtAction(
             nameof(GetById),
@@ -55,6 +60,9 @@ public class TicketsController(
                 file.ContentType,
                 file.Length),
             GetCurrentUserId());
+
+        await realtimeNotifier.TicketsChangedAsync(
+            HttpContext.RequestAborted);
 
         return Ok(attachment);
     }
@@ -138,6 +146,9 @@ public class TicketsController(
             request,
             adminId);
 
+        await realtimeNotifier.TicketsChangedAsync(
+            HttpContext.RequestAborted);
+
         return Ok(ticket);
     }
 
@@ -154,6 +165,9 @@ public class TicketsController(
             request,
             userId);
 
+        await realtimeNotifier.TicketsChangedAsync(
+            HttpContext.RequestAborted);
+
         return Ok(ticket);
     }
 
@@ -167,6 +181,9 @@ public class TicketsController(
         var ticket = await ticketService.ConfirmFixAsync(
             id,
             reporterId);
+
+        await realtimeNotifier.TicketsChangedAsync(
+            HttpContext.RequestAborted);
 
         return Ok(ticket);
     }
